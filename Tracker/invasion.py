@@ -7,6 +7,9 @@ class Invasion:
 
     def __init__(self, cogType, district, progress):
         self._cogType = cogType
+        self._cogType = self._cogType.replace(
+            chr(3), ""
+        )  # remove soft hyphen since its not needed
         self._district = district
         self._progress = progress
 

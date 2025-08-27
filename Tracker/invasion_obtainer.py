@@ -27,11 +27,14 @@ class InvasionTracker:
 
         for inv in new_invasions:
             print(f"New invasion: {inv.printOut()}\n")
-            self.current_invasions.add(inv)
 
         for inv in ended_invasions:
             print(f"Ended invasion: {inv.printOut()}\n")
-            self.current_invasions.remove(inv)
+
+        self.current_invasions = (
+            temp  # set to the new list of invasions for updated progress
+        )
+        return new_invasions, ended_invasions
 
     def get_cur_invasions_message(self) -> str:
         if len(self.current_invasions) == 0:
