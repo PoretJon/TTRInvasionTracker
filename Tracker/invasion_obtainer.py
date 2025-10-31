@@ -1,6 +1,13 @@
 import requests, time
 from .invasion import Invasion
 
+"""
+* Flippy! InvasionTracker
+* Author: Jon Poret, 2025
+* Purpose: Utilize ToonTown Rewritten's API to receive information
+* regarding cog invasions in game.
+"""
+
 
 class InvasionTracker:
     API_URL = "https://www.toontownrewritten.com/api/invasions"
@@ -44,11 +51,3 @@ class InvasionTracker:
         for inv in self.current_invasions:
             msg += inv.printOut() + "\n\n"
         return msg
-
-
-# testing code
-
-# tracker = InvasionTracker()
-# tracker.refresh_current_invasions()
-
-# print(tracker.get_cur_invasions_message())
