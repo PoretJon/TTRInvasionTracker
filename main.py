@@ -1,15 +1,31 @@
+"""
+* Flippy! main.py
+* Author: Jon Poret 2025
+* Purpose: Runs the discord bot, providing functionality.
+"""
+
 import os, discord, dotenv
 from discord.ext import commands, tasks
 from Information import CogInformation
 from Tracker.invasion import Invasion
 from Tracker.invasion_obtainer import InvasionTracker
+from Database.db_handler import FlippyDB
 import time
 
 
 cog_info = CogInformation.CogInformation()
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
+flipDB = FlippyDB()
 # tree = discord.app_commands.CommandTree(bot)
+
+
+# creates a string of user ids, not very efficient
+def build_ping_list(users: list):
+    list = ""
+    for user in users:
+        list += f"@&{user} "
+    return list
 
 
 @bot.event
@@ -27,25 +43,6 @@ async def on_ready():
 async def get_invasions(interaction):
     text = tracker.get_cur_invasions_message()
     await interaction.response.send_message(text)
-
-
-# not to be used in production
-# @bot.tree.command(
-#     name="refresh_invasions",
-#     description="Refresh invasions",
-#     guild=discord.Object(id=975230586635550831),
-# )
-# async def refresh_invasions(interaction):
-#     invasions = tracker.refresh_current_invasions()
-#     await interaction.response.send_message("Invasions refreshed.")
-#     if len(invasions[0]) > 0:  # there are new invasions
-#         print("new invasions")
-#         for inv in invasions[0]:
-#             await interaction.followup.send(f"New invasion:\n{inv.printOut()}\n")
-#     if len(invasions[1]) > 0:  # there are ended invasions
-#         print("ended invasions")
-#         for inv in invasions[1]:
-#             await interaction.followup.send(f"Ended invasion:\n{inv.printOut()}\n")
 
 
 @bot.event
@@ -66,6 +63,18 @@ async def on_message(message):
 async def invasion_check_loop():
     invasions = tracker.refresh_current_invasions()
     # check for new invasions
+    new_invasions = invasions[0]
+    ended_invasions = invasions[1]
+
+    if len(new_invasions) > 0 or len(ended_invasions) > 0:
+        # get all channels, create user list per server
+        server_list = flipDB.get_server_list()
+        for server in server_list:
+            guild_id = server[0]  # TODO: double check this is correct
+            for invasion in new_invasions:
+                cog_name = invasion._cogType()
+                ping_list = flipDB.get_all_pings_for_server(guild_id, cog_name)
+
     if len(invasions[0]) > 0:
         channel = bot.get_channel(1410048723743932547)
         for inv in invasions[0]:
