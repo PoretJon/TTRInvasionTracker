@@ -16,7 +16,9 @@ import time
 cog_info = CogInformation.CogInformation()
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
-flipDB = FlippyDB()
+dotenv.load_dotenv(dotenv_path="Database/.env")
+db_params = f"dbname={os.getenv("dbname")} user={os.getenv("user")} password={os.getenv("password")} host={os.getenv("host")} port={os.getenv("port")}"
+flipDB = FlippyDB(db_params)
 # tree = discord.app_commands.CommandTree(bot)
 
 
@@ -43,6 +45,20 @@ async def on_ready():
 async def get_invasions(interaction):
     text = tracker.get_cur_invasions_message()
     await interaction.response.send_message(text)
+
+
+@bot.tree.command(
+    name="register_server",
+    description="Registers the bot to this channel. Requires admin priveliges.",
+)
+@commands.has_permissions(administrator=True)
+async def register_server(channel: discord.Interaction):
+    channel_name = channel.channel_id
+    guild_id = channel.guild_id
+    flipDB.register_server(guild_id, channel_name)
+    await channel.response.send_message(
+        "Registered Flippy to this channel. If Flippy was registered in this server already, this channel will now be used instead."
+    )
 
 
 @bot.event

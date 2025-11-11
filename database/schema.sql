@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS USER_SETTINGS (
 );
 
 CREATE TABLE IF NOT EXISTS USER_COG_NOTIFS (
-    id          INT PRIMARY KEY,
+    id          SERIAL PRIMARY KEY,
     user_id     VARCHAR,
     cog_name    VARCHAR,
     UNIQUE (user_id, cog_name)
