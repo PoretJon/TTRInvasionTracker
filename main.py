@@ -5,6 +5,7 @@
 """
 
 import os, discord, dotenv
+from typing import Literal
 from discord.ext import commands, tasks
 from Information import CogInformation
 from Tracker.invasion import Invasion
@@ -45,6 +46,49 @@ async def on_ready():
 async def get_invasions(interaction):
     text = tracker.get_cur_invasions_message()
     await interaction.response.send_message(text)
+
+
+async def cogname_autocomplete(
+    interaction: discord.Interaction, current: str
+) -> list[discord.app_commands.Choice[str]]:
+    cogs = cog_info.cogs_dict.keys()
+    choices = [
+        discord.app_commands.Choice(name=cog, value=cog)
+        for cog in cogs
+        if current.lower() in cog.lower()
+    ]
+    return choices[:25]
+
+
+@bot.tree.command(
+    name="subscribe_to_cog",
+    description="Subscribe to notifications for a specific cog.",
+)
+@discord.app_commands.autocomplete(cog=cogname_autocomplete)
+async def subscribe_to_cog(interaction: discord.Interaction, cog: str):
+    if cog not in cog_info.cogs_dict.keys():
+        await interaction.response.send_message(
+            "You have entered an incorrect cog name. Please try again.", ephemeral=True
+        )
+        return
+    user_id = interaction.user.id
+    print(user_id)
+    res = flipDB.register_cog_for_user(user_id, cog)
+    print(res)
+    if res is not None:
+        await interaction.response.send_message(f"{cog} registered")
+
+
+@bot.tree.command(
+    name="unsubscribe_to_cog", description="Unsubscribe from notifications for a cog."
+)
+@discord.app_commands.autocomplete(cog=cogname_autocomplete)
+async def unsubscribe_from_cog(interaction: discord.Interaction, cog: str):
+    # logic for unsubscribing
+    user_id = interaction.user.id
+    res = flipDB.remove_cog_ping(user_id, cog)
+    if res is not None:  # assumes this always returns the correct thing, may not
+        await interaction.response.send_message(f"Unsubscribed from {cog}")
 
 
 @bot.tree.command(

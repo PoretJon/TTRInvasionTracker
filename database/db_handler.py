@@ -40,6 +40,7 @@ class FlippyDB:
         cursor = self.psycopg_obj.cursor()
         cursor.execute(query, params)
         try:
+            cursor.connection.commit()
             results = cursor.fetchall()
             cursor.close()
             return results
@@ -58,9 +59,10 @@ class FlippyDB:
         (%(guild_id)s, %(channel_id)s)
         ON CONFLICT (guild_id) DO UPDATE
         SET channel_id = %(channel_id)s
+        RETURNING channel_id
         """
         params = {"guild_id": guild_id, "channel_id": channel_id}
-        self.run_query(sql_query, params)
+        return self.run_query(sql_query, params)
 
     """
     Gets the users for a specific server that need to be pinged
@@ -84,15 +86,31 @@ class FlippyDB:
         (%(user_id)s, %(guild_id)s)
         ON CONFLICT (user_id) DO UPDATE
         SET guild_id = %(guild_id)s
+        RETURNING user_id
         """
-        self.run_query(sql_query, params={"user_id": user_id, "guild_id": guild_id})
+        return self.run_query(
+            sql_query, params={"user_id": user_id, "guild_id": guild_id}
+        )
 
     def register_cog_for_user(self, user_id, cog_name):
         sql_query = """
             INSERT INTO USER_COG_NOTIFS (user_id, cog_name) VALUES
             (%(user_id)s, %(cog_name)s)
+            RETURNING cog_name
         """
-        self.run_query(sql_query, params={"user_id": user_id, "cog_name": cog_name})
+        return self.run_query(
+            sql_query, params={"user_id": user_id, "cog_name": cog_name}
+        )
+
+    def remove_cog_ping(self, user_id, cog_name):
+        sql_query = """
+            DELETE FROM USER_COG_NOTIFS 
+            WHERE user_id = %(user_id)s AND cog_name = %(cog_name)s
+            RETURNING cog_name
+        """
+        return self.run_query(
+            sql_query, params={"user_id": user_id, "cog_name": cog_name}
+        )
 
     def get_server_list(self):
         sql_query = """

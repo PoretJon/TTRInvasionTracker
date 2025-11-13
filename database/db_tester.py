@@ -9,11 +9,13 @@ db_params = f"dbname={os.getenv("dbname")} user={os.getenv("user")} password={os
 flip = FlippyDB(db_params)
 
 flip.reset_tables()
+print("here?")
 
 flip.register_server("1232123", "22332")
 flip.register_user_to_server("some_id", "1232123")
-
-flip.register_cog_for_user("some_id", "Backstabber")
+print("1")
+x = flip.register_cog_for_user("some_id", "Backstabber")
+print(x)
 
 print(flip.get_server_list())
 print(flip.get_all_pings_for_server("1232123", "Backstabber"))
