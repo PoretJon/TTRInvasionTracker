@@ -96,7 +96,7 @@ class FlippyDB:
         sql_query = """
             INSERT INTO USER_COG_NOTIFS (user_id, cog_name) VALUES
             (%(user_id)s, %(cog_name)s)
-            RETURNING cog_name
+            RETURNING user_id, cog_name
         """
         return self.run_query(
             sql_query, params={"user_id": user_id, "cog_name": cog_name}
@@ -105,13 +105,14 @@ class FlippyDB:
     def remove_cog_ping(self, user_id, cog_name):
         sql_query = """
             DELETE FROM USER_COG_NOTIFS 
-            WHERE user_id = %(user_id)s AND cog_name = %(cog_name)s
+            WHERE user_id = %(user_id)s::varchar AND cog_name = %(cog_name)s
             RETURNING cog_name
         """
         return self.run_query(
             sql_query, params={"user_id": user_id, "cog_name": cog_name}
         )
 
+    # will likely be unused
     def get_server_list(self):
         sql_query = """
             SELECT * FROM SERVER_SETTINGS

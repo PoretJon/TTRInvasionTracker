@@ -33,10 +33,10 @@ class InvasionTracker:
         )  # get ended invasions to remove them from the list
 
         for inv in new_invasions:
-            print(f"New invasion: {inv.printOut()}\n")
+            print(f"New invasion: \n{str(inv)}\n")
 
         for inv in ended_invasions:
-            print(f"Ended invasion: {inv.printOut()}\n")
+            print(f"Ended invasion: \n{str(inv)}\n")
 
         self.current_invasions = (
             temp  # set to the new list of invasions for updated progress

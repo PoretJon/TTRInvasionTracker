@@ -24,11 +24,18 @@ flipDB = FlippyDB(db_params)
 
 
 # creates a string of user ids, not very efficient
-def build_ping_list(users: list):
+async def build_ping_list(users: list):
     list = ""
     for user in users:
-        list += f"@&{user} "
+        list += f"<@{user}> "
     return list
+
+
+async def get_users_for_cog_and_server(guild_id, cog_name):
+    list_of_users = [
+        id[0] for id in flipDB.get_all_pings_for_server(guild_id, cog_name)
+    ]
+    return list_of_users
 
 
 @bot.event
@@ -73,7 +80,12 @@ async def subscribe_to_cog(interaction: discord.Interaction, cog: str):
         return
     user_id = interaction.user.id
     print(user_id)
-    res = flipDB.register_cog_for_user(user_id, cog)
+    try:
+        res = flipDB.register_cog_for_user(user_id, cog)
+    except:
+        await interaction.response.send_message(
+            "Subscribing to cog failed. You are likely already subscribed to this cog."
+        )
     print(res)
     if res is not None:
         await interaction.response.send_message(f"{cog} registered")
@@ -105,6 +117,20 @@ async def register_server(channel: discord.Interaction):
     )
 
 
+@bot.tree.command(
+    name="subscribe_to_server",
+    description="Sets a user's preferred server for Flippy to this server.",
+)
+async def register_user_to_server(interaction: discord.Interaction):
+    user_id = interaction.user.id
+    guild_id = interaction.guild_id
+    res = flipDB.register_user_to_server(user_id, guild_id)
+    if len(res) > 0:
+        await interaction.response.send_message(
+            "Registered for notifications in this server. If you were registered in another server, you will no longer receive pings there."
+        )
+
+
 @bot.event
 async def on_message(message):
     if message.author == bot.user:  # make sure the bot doesnt reply to itself
@@ -117,6 +143,23 @@ async def on_message(message):
             return
 
 
+async def send_invasion_message(guild_info, invasion):
+    guild_id = (guild_info[0],)
+    channel_id = int(guild_info[1])
+    channel = bot.get_channel(channel_id)
+    user_list = await get_users_for_cog_and_server(guild_id, invasion.getCogType())
+    ping_list = await build_ping_list(user_list)
+    await channel.send(f"# New invasion found!\n\n{str(invasion)}\n\n{ping_list}")
+
+
+async def send_ended_invasion(guild_info, invasion):
+    guild_id = (guild_info[0],)
+    channel_id = int(guild_info[1])
+    channel = bot.get_channel(channel_id)
+    user_list = await get_users_for_cog_and_server(guild_id, invasion.getCogType())
+    await channel.send(f"# Invasion ended:\n\n{str(invasion)}")
+
+
 # invasion check loop
 # sends messages to my private server when new invasions are found
 @tasks.loop(minutes=5)
@@ -126,27 +169,19 @@ async def invasion_check_loop():
     new_invasions = invasions[0]
     ended_invasions = invasions[1]
 
+    # if there are new or ended invasions, notify users
     if len(new_invasions) > 0 or len(ended_invasions) > 0:
         # get all channels, create user list per server
         server_list = flipDB.get_server_list()
         for server in server_list:
             guild_id = server[0]  # TODO: double check this is correct
+            # print(server[1])
+            channel = bot.get_channel(int(server[1]))
             for invasion in new_invasions:
-                cog_name = invasion._cogType()
-                ping_list = flipDB.get_all_pings_for_server(guild_id, cog_name)
-
-    if len(invasions[0]) > 0:
-        channel = bot.get_channel(1410048723743932547)
-        for inv in invasions[0]:
-            cog_role_id = get_cog_ping_id(inv.getCogType())
-            await channel.send(
-                f"# New invasion found! \n\n{inv.printOut()}\n\n<@&{cog_role_id}>"
-            )
-            time.sleep(0.2)  # to avoid rate limiting
-    if len(invasions[1]) > 0:
-        channel = bot.get_channel(1410048723743932547)
-        for inv in invasions[1]:
-            await channel.send(f"Ended invasion:\n{inv.printOut()}\n")
+                await send_invasion_message(server, invasion)
+            for invasion in ended_invasions:
+                await send_ended_invasion(server, invasion)
+        # todo: do above for ended invasions without pings
 
 
 def get_cog_ping_id(cog_name: str):

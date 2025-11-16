@@ -16,21 +16,14 @@ class Invasion:
     def __eq__(self, other):
         if not isinstance(other, Invasion):
             return False
-        return (
-            self.getCogType() == other.getCogType()
-            and self.getDistrict() == other.getDistrict()
-        )
+        return self._cogType == other._cogType and self._district == other._district
 
     def __hash__(self):
-        return hash((self.getCogType(), self.getDistrict()))
+        return hash((self._cogType, self._district))
+
+    def __str__(self):
+        return f"**District:** {self._district}\n**Cog Type:** {self._cogType}\n**Progress:** {self._progress}"
 
     # these probably aren't needed but im going to make and use them anyway
     def getCogType(self):
         return self._cogType
-
-    def getDistrict(self):
-        return self._district
-
-    def printOut(self):
-        str = f"**District:** {self._district}\n**Cog Type:** {self._cogType}\n**Progress:** {self._progress}"
-        return str
